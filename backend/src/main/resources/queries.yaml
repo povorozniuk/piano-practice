@@ -1,0 +1,97 @@
+transformations:
+  practice_minute:
+    prep:
+      drop table if exists practice_minute;
+      create table if not exists practice_minute(
+        time timestamp unique not null,
+        num_of_pressed_keys integer not null,
+        updated_at timestamp not null default now()
+      );
+      create index if not exists practice_minute_time on practice_minute(time);
+    transform:
+      drop table if exists practice_minute_tmp;
+      create table practice_minute_tmp (like practice_minute including defaults);
+      
+      insert into practice_minute_tmp
+      select
+        date_trunc('minute', time) as minute_time,
+        sum(case when pressure <> 0 then 1 else 0 end) as num_of_pressed_keys
+      from action_history
+      where date_trunc('day', time) >= ':min_day' and date_trunc('day', time) <= current_date
+      group by 1
+      order by 1;
+    min_criteria:
+      select coalesce(max(date(time)), '2020-07-12') as min_criteria from practice_minute;
+  practice_day:
+    prep:
+      drop table if exists practice_day;
+      create table if not exists practice_day(
+        day date unique not null,
+        num_of_pressed_keys integer not null,
+        practice_minutes integer not null,
+        practice_hours varchar(20) not null,
+        updated_at timestamp not null default now()
+      );
+      drop table if exists practice_day_tmp;
+      create table practice_day_tmp (like practice_day including defaults);
+    transform:
+      insert into practice_day_tmp
+      with dates as (
+        select date(day) as day
+        from generate_series(date(':min_day'),
+          date(current_date), '1 day'::interval) day
+        order by day desc
+        ), day_level as (
+        select 
+          x.day,
+          coalesce(x.num_of_pressed_keys,0) as num_of_pressed_keys,
+          x.minutes as practice_minutes, 
+          to_char(x.minutes * '1 minute'::interval, 'HH24:MI') as practice_hours
+        from (
+          select 
+            d.day,
+            sum(m.num_of_pressed_keys) as num_of_pressed_keys,
+            count(m.*) as minutes
+          from dates d
+          left join practice_minute m on date(m.time) = d.day
+          group by 1
+        ) x
+      )
+      select * from day_level;
+    min_criteria:
+      select coalesce(max(day), '2020-07-12') as min_criteria from practice_day;
+  practice_month:
+    prep:
+      drop table if exists practice_month;
+      create table if not exists practice_month(
+        month date unique not null,
+        num_of_pressed_keys integer not null,
+        practice_minutes integer not null,
+        practice_hours varchar(20) not null,
+        updated_at timestamp not null default now()
+      );
+      drop table if exists practice_month_tmp;
+      create table practice_month_tmp (like practice_month including defaults);
+    transform:
+      insert into practice_month_tmp
+        with day_level as (
+          select
+            date(date_trunc('month', day)) as month,
+            sum(num_of_pressed_keys) as num_of_pressed_keys,
+            sum(practice_minutes) as practice_minutes,
+            to_char(sum(practice_minutes) * '1 minute'::interval, 'HH24:MI') as practice_hours
+        from practice_day
+        where day >= ':min_day'
+        group by date_trunc('month', day)
+        order by 1
+      )
+      select * from day_level;
+    min_criteria:
+      select coalesce(max(month), '2020-07-01') as min_criteria from practice_month;
+  common_sql_scripts:
+    merge_from_tmp:
+      delete from :table_name m
+      using :table_name_tmp t
+      where m.:merge_column = t.:merge_column;
+      insert into :table_name select * from :table_name_tmp;
+      drop table :table_name_tmp;

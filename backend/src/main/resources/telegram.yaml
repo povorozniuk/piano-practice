@@ -1,0 +1,23 @@
+responses:
+  start-hello:
+    Hi %s! 
+    This bot keeps track of my piano practice time. I connected my Kawai-ES110 to a computer via a Midi cable and wrote a simple Java application to save what keys were pressed at what time.
+    This way I can calculate the practice time and potentially use this data to analyze what keys are played the most or even re-play what I played at some point in the past (this is yet to be written though). 
+    Cheers!
+  start-commands:
+    Send me a message with one of the following to retrieve practice data
+    
+    /today
+    
+    /yesterday
+    
+    /week
+    
+    /month
+    
+    /month 2021-05
+    
+    /year
+    
+    /year 2020
+
