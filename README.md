@@ -17,13 +17,48 @@ At the very least I wanted to hold myself accountable for practicing consistentl
 
 This repository contains 3 modules, let me do a quick rundown of them:
 
-`midi-listener` - is a Spring Boot Java application running on a local server physically connected to the digital piano via the Midi interface. Whenever a key is pressed or released, the data is sent to a topic via Web Sockets in real-time as well as queued to be sent to a remote RDS Postgres database in AWS.
+
+# ui-piano-visualization
 
 `ui-piano-visualization` is a Vue JS application which is listening to the messages midi-listener sends to a topic via Web Sockets. It displays in real time what keys are pressed on the piano. I wrote it after starting online piano lessons. I found it useful to share my screen with this Vue JS app running so the teacher could clearly see what keys I am pressing and when. Sure, video is also there but one couldn't see what keys are pressed as clearly 100% of the time. 
 
+
+Below you can see the front-end application in action. Whenever `midi-listener` publishes a new message to the topic, a certian key is displayed as either pressed or released. You can see the messages highlighted in the DevTools and how they correspond to the keys on the piano.
+
+![two-notes-pressed-highlighted](https://user-images.githubusercontent.com/29631366/191028613-3b451263-0ce2-4c19-9421-eda6f56a483e.png)
+
+https://user-images.githubusercontent.com/29631366/191024555-3a440774-4824-4451-9786-3e11a68a3bf0.mov
+
+![c-maj-chord-highlighted](https://user-images.githubusercontent.com/29631366/191028619-4f1a90ae-b000-4908-ab44-57035577f137.png)
+
+https://user-images.githubusercontent.com/29631366/191024598-205cc690-c382-475b-8e62-305975380705.mov
+
+
+
+
+# midi-listener
+
+`midi-listener` - is a Spring Boot Java application running on a local server physically connected to the digital piano via the Midi interface. Whenever a key is pressed or released, the data is sent to a topic via Web Sockets in real-time as well as queued to be sent to a remote RDS Postgres database in AWS.
+
+![Midi Listener](https://user-images.githubusercontent.com/29631366/191110991-0b822c46-f556-47ad-a28e-5e96374cc5ec.png)
+
+
+
 Eventually, I got tired of opening Data Grip to check the practice time and figured it was time to create a web service I could interact with via a telegram bot
+
+# backend
 
 `backend` - is a Spring Boot Java application that does 2 things: 1) it runs transformations on the data fed from the digital piano into RDS to create several aggregate tables in the database for more performant queries 2) it interacts with the Telegram Bot API by instantiating a "Long Polling" service and responding to the messages sent to the bot.
 
+![Backend](https://user-images.githubusercontent.com/29631366/191120883-ba361877-0117-4386-b02a-a30024bee405.png)
+
+
+
 Telegram bot is here: https://t.me/gregory_piano_practice_bot
+
+
+
+
+
+
 
